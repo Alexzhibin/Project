@@ -118,15 +118,25 @@ data_non_zero_pca = predict(data_non_zero.pca,data_non_zero)[,1:46] #80% varianc
 train.pca = data_non_zero_pca[train_index,]
 test.pca = data_non_zero_pca[test_index,]
 cv.pca = data_non_zero_pca[cv_index,]
+
 #########
-#Xgboost
+#Xgboost V.S size of sample
 ########
-cv.res.pca=xgb.cv(data=train_pca,param=param,nfold=4,label=y,nrounds=100,prediction=TRUE,verbose=TRUE)
-cv.res.plot = subset(cv.res.pca$dt,select=c(train.auc.mean,test.auc.mean))
-plot(cv.res.plot$train.auc.mean,type="l",col="blue",ylim=c(0,1),xlab="numbers of round",ylab="AUC")
-lines(cv.res.plot$test.auc.mean, type="l", pch=22,col="red")
+xgb_test_data = data.frame(n.sample.size=rep(NA,15),test.auc.mean=rep(NA,15),train.auc.mean=rep(NA,15))
+j = 0
+for (p in seq(0.3,1,by=0.05)){
+    j=j+1
+  xgb_test_index = createDataPartition(y=y_train,p=p,list=FALSE)
+  cv.res.pca=xgb.cv(data=train_pca[xgb_test_index,],param=param,nfold=4,label=y[xgb_test_index],nrounds=50,prediction=TRUE,verbose=TRUE)
+  xgb_test_data$test.auc.mean[j] = cv.res.pca$dt[which.max(cv.res.pca$dt$test.auc.mean),]$test.auc.mean
+  xgb_test_data$train.auc.mean[j] = cv.res.pca$dt[which.max(cv.res.pca$dt$train.auc.mean),]$train.auc.mean
+  xgb_test_data$n.sample.size[j] = p*nrow(train_pca)
+}
+plot(x=xgb_test_data$n.sample.size,y=xgb_test_data$test.auc.mean,type="l",
+     ,ylim=c(0.4,1.1),col="blue",xlab="numbers of round",ylab="AUC")
+lines(x=xgb_test_data$n.sample.size,y=xgb_test_data$train.auc.mean, pch=22,col="red")
 title(main="xgboost", col.main="red", font.main=4)
-###
+
 #From the plot, we can find that the 46 feature could explain good as 1934 features do, if the numbers of round are high than 15
 ###################
 #To inrease the lambda
