@@ -1,4 +1,5 @@
 #####Handdle the char_data
+##If we have run the first_10000.r, we don't run the first step
 ##1.Store the data with multiple/5 levels into a new data frame-Char_data
 data = read.csv("train.csv",nrows=10000)
 raw_data = data[,-1]
